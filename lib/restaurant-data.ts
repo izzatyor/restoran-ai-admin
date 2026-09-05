@@ -256,3 +256,79 @@ export const diningTables: DiningTable[] = [
   },
   { id: 't12', number: 12, seats: 2, status: 'empty' },
 ]
+// ==========================================================
+// QO'SHISH KERAK: bu blokni lib/restaurant-data.ts faylining
+// OXIRIGA qo'shing (faylning qolgan qismini o'chirmang).
+// ==========================================================
+
+export type StaffRole = 'Manager' | 'Server' | 'Chef' | 'Host' | 'Bartender'
+
+export type StaffStatus = 'on-shift' | 'off-shift' | 'on-break'
+
+export type StaffMember = {
+  id: string
+  name: string
+  role: StaffRole
+  status: StaffStatus
+  shift: string
+  phone: string
+}
+
+export const staffMembers: StaffMember[] = [
+  {
+    id: 's1',
+    name: 'Elena Marsh',
+    role: 'Manager',
+    status: 'on-shift',
+    shift: '9:00 AM - 6:00 PM',
+    phone: '+1 (555) 012-3344',
+  },
+  {
+    id: 's2',
+    name: 'Jonah Reyes',
+    role: 'Server',
+    status: 'on-shift',
+    shift: '4:00 PM - 12:00 AM',
+    phone: '+1 (555) 019-2210',
+  },
+  {
+    id: 's3',
+    name: 'Rina Alvi',
+    role: 'Server',
+    status: 'on-break',
+    shift: '4:00 PM - 12:00 AM',
+    phone: '+1 (555) 044-7781',
+  },
+  {
+    id: 's4',
+    name: 'Sam Okonkwo',
+    role: 'Server',
+    status: 'on-shift',
+    shift: '5:00 PM - 1:00 AM',
+    phone: '+1 (555) 088-3312',
+  },
+  {
+    id: 's5',
+    name: 'Marco Duval',
+    role: 'Chef',
+    status: 'on-shift',
+    shift: '2:00 PM - 11:00 PM',
+    phone: '+1 (555) 021-6690',
+  },
+  {
+    id: 's6',
+    name: 'Priya Nair',
+    role: 'Host',
+    status: 'off-shift',
+    shift: '11:00 AM - 7:00 PM',
+    phone: '+1 (555) 077-4453',
+  },
+  {
+    id: 's7',
+    name: 'Diego Alvarez',
+    role: 'Bartender',
+    status: 'on-shift',
+    shift: '5:00 PM - 1:00 AM',
+    phone: '+1 (555) 099-1120',
+  },
+]
