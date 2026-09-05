@@ -67,18 +67,8 @@ export function DashboardShell() {
           {page === 'dashboard' && <OverviewPage />}
           {page === 'menu' && <MenuPage />}
           {page === 'tables' && <TablesPage />}
-          {page === 'staff' && (
-            <PlaceholderPage
-              title="Staff management is on the way"
-              description="Rosters, roles and shift swaps will live here."
-            />
-          )}
-          {page === 'orders' && (
-            <PlaceholderPage
-              title="Full order history is on the way"
-              description="Filter by status, table or server and export receipts."
-            />
-          )}
+          {page === 'staff' && <StaffPage />}
+          {page === 'orders' && <OrdersPage />}
           {page === 'settings' && (
             <PlaceholderPage
               title="Settings are on the way"
