@@ -59,7 +59,7 @@ export function TablesPage() {
       const existing = orderByTable.get(o.table_id)
       if (
         !existing ||
-        new Date(o.created_at) < new Date(existing.created_at)
+        new Date(o.created_at) > new Date(existing.created_at)
       ) {
         orderByTable.set(o.table_id, o)
       }
