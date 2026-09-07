@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase-client'
+import { StaffProvider } from '@/lib/staff-context'
 import { LoginPage } from './login-page'
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
@@ -38,5 +39,5 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     return <LoginPage />
   }
 
-  return <>{children}</>
+  return <StaffProvider>{children}</StaffProvider>
 }
