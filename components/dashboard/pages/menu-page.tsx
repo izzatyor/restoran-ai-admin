@@ -1,25 +1,67 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus } from 'lucide-react'
 import {
   type MenuCategory,
   type MenuItem,
   menuCategories,
-  menuItems as initialItems,
 } from '@/lib/restaurant-data'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { MenuItemCard } from '../menu-item-card'
 import { MenuItemDialog } from '../menu-item-dialog'
+import { supabase } from '@/lib/supabase-client'
+import { useStaff } from '@/lib/staff-context'
 
 type Filter = 'All' | MenuCategory
 
+type DbCategory = { id: string; name: string }
+
 export function MenuPage() {
-  const [items, setItems] = useState<MenuItem[]>(initialItems)
+  const staff = useStaff()
+  const [items, setItems] = useState<MenuItem[]>([])
+  const [categories, setCategories] = useState<DbCategory[]>([])
+  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<Filter>('All')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<MenuItem | null>(null)
+
+  useEffect(() => {
+    if (staff) loadData()
+  }, [staff])
+
+  async function loadData() {
+    if (!staff) return
+    setLoading(true)
+
+    const { data: cats } = await supabase
+      .from('menu_categories')
+      .select('id, name')
+      .eq('restaurant_id', staff.restaurantId)
+
+    const { data: dbItems } = await supabase
+      .from('menu_items')
+      .select('id, name, description, price, image_url, category_id')
+      .eq('restaurant_id', staff.restaurantId)
+
+    const catList = cats ?? []
+    setCategories(catList)
+    const catNameById = Object.fromEntries(catList.map((c) => [c.id, c.name]))
+
+    const mapped: MenuItem[] = (dbItems ?? []).map((i) => ({
+      id: i.id,
+      name: i.name,
+      price: Number(i.price),
+      category: (catNameById[i.category_id ?? ''] ??
+        'Mains') as MenuCategory,
+      image: i.image_url ?? '/menu/placeholder.png',
+      description: i.description ?? '',
+    }))
+
+    setItems(mapped)
+    setLoading(false)
+  }
 
   const visible =
     filter === 'All' ? items : items.filter((i) => i.category === filter)
@@ -34,19 +76,63 @@ export function MenuPage() {
     setDialogOpen(true)
   }
 
-  function save(item: MenuItem) {
-    setItems((prev) =>
-      prev.some((i) => i.id === item.id)
-        ? prev.map((i) => (i.id === item.id ? item : i))
-        : [item, ...prev],
-    )
+  async function save(item: MenuItem) {
+    if (!staff) return
+
+    let categoryId = categories.find((c) => c.name === item.category)?.id
+
+    if (!categoryId) {
+      const { data: newCat } = await supabase
+        .from('menu_categories')
+        .insert({ restaurant_id: staff.restaurantId, name: item.category })
+        .select('id, name')
+        .single()
+      if (newCat) {
+        categoryId = newCat.id
+        setCategories((prev) => [...prev, newCat])
+      }
+    }
+
+    const isExisting = items.some((i) => i.id === item.id)
+
+    if (isExisting) {
+      await supabase
+        .from('menu_items')
+        .update({
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          category_id: categoryId,
+        })
+        .eq('id', item.id)
+    } else {
+      await supabase.from('menu_items').insert({
+        restaurant_id: staff.restaurantId,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        category_id: categoryId,
+        image_url: item.image,
+      })
+    }
+
+    await loadData()
   }
 
-  function remove(id: string) {
+  async function remove(id: string) {
+    await supabase.from('menu_items').delete().eq('id', id)
     setItems((prev) => prev.filter((i) => i.id !== id))
   }
 
   const filters: Filter[] = ['All', ...menuCategories]
+
+  if (!staff || loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6">
