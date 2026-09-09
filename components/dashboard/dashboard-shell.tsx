@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import type { Page } from '@/lib/restaurant-data'
+import { useStaff } from '@/lib/staff-context'
 import { Sidebar } from './sidebar'
 import { TopBar } from './top-bar'
 import { OverviewPage } from './pages/overview-page'
@@ -11,10 +12,10 @@ import { OrdersPage } from './pages/orders-page'
 import { SettingsPage } from './pages/settings-page'
 import { CallWaiterAlerts } from './call-waiter-alerts'
 
-const pageMeta: Record<Page, { title: string; subtitle: string }> = {
+const staticPageMeta: Record<Page, { title: string; subtitle: string }> = {
   dashboard: {
-    title: 'Good evening, Elena',
-    subtitle: 'Here is what is happening at Ember & Oak tonight.',
+    title: 'Xush kelibsiz',
+    subtitle: 'Bugungi holat qanday?',
   },
   menu: {
     title: 'Menu',
@@ -38,12 +39,22 @@ const pageMeta: Record<Page, { title: string; subtitle: string }> = {
   },
 }
 export function DashboardShell() {
+  const staff = useStaff()
   const [page, setPage] = useState<Page>('dashboard')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   function navigate(next: Page) {
     setPage(next)
     setMobileNavOpen(false)
   }
+
+  const pageMeta =
+    page === 'dashboard' && staff
+      ? {
+          title: `Xush kelibsiz, ${staff.fullName.split(' ')[0]}`,
+          subtitle: `${staff.restaurantName} boshqaruv paneli`,
+        }
+      : staticPageMeta[page]
+
   return (
     <div className="flex min-h-svh bg-background">
       <CallWaiterAlerts />
@@ -55,8 +66,8 @@ export function DashboardShell() {
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
-          title={pageMeta[page].title}
-          subtitle={pageMeta[page].subtitle}
+          title={pageMeta.title}
+          subtitle={pageMeta.subtitle}
           onOpenNav={() => setMobileNavOpen(true)}
         />
         <main className="flex-1 px-4 pb-10 pt-2 sm:px-6 lg:px-8">
