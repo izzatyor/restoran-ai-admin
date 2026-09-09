@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Page } from '@/lib/restaurant-data'
+import { useStaff } from '@/lib/staff-context'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
@@ -23,6 +24,13 @@ const navItems: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'orders', label: 'Orders', icon: ClipboardList },
   { id: 'settings', label: 'Settings', icon: Settings },
 ]
+
+const roleLabel: Record<string, string> = {
+  admin: 'Administrator',
+  kassir: 'Kassir',
+  ofitsiant: 'Ofitsiant',
+  oshxona: 'Oshxona',
+}
 
 type SidebarProps = {
   active: Page
@@ -37,6 +45,17 @@ export function Sidebar({
   mobileOpen,
   onMobileClose,
 }: SidebarProps) {
+  const staff = useStaff()
+
+  const initials = staff
+    ? staff.fullName
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : '..'
+
   return (
     <>
       <button
@@ -63,7 +82,9 @@ export function Sidebar({
               <Flame className="size-5" aria-hidden />
             </span>
             <div className="leading-tight">
-              <p className="text-sm font-bold tracking-tight">Ember &amp; Oak</p>
+              <p className="text-sm font-bold tracking-tight">
+                {staff?.restaurantName || 'Restoran'}
+              </p>
               <p className="text-xs text-muted-foreground">Admin</p>
             </div>
           </div>
@@ -118,12 +139,16 @@ export function Sidebar({
           <div className="flex items-center gap-3 rounded-xl px-2 py-2">
             <Avatar className="size-9">
               <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">
-                EM
+                {initials}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 leading-tight">
-              <p className="truncate text-sm font-semibold">Elena Marsh</p>
-              <p className="truncate text-xs text-muted-foreground">General manager</p>
+              <p className="truncate text-sm font-semibold">
+                {staff?.fullName || 'Yuklanmoqda...'}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {staff ? roleLabel[staff.role] ?? staff.role : ''}
+              </p>
             </div>
           </div>
         </div>
