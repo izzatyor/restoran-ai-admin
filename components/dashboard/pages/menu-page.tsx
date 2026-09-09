@@ -162,7 +162,7 @@ export function MenuPage() {
 
     if (nameIdx === -1 || categoryIdx === -1 || priceIdx === -1) {
       setImportMessage(
-        "Xato: CSV faylida 'name', 'category', 'price' ustunlari bo'lishi shart.",
+        "Error: CSV file must include 'name', 'category', 'price' columns.",
       )
       setImporting(false)
       return
@@ -197,7 +197,7 @@ export function MenuPage() {
     }
 
     setCategories(currentCategories)
-    setImportMessage(`${successCount} ta taom muvaffaqiyatli qo'shildi.`)
+    setImportMessage(`${successCount} items imported successfully.`)
     setImporting(false)
     await loadData()
   }
@@ -207,7 +207,7 @@ export function MenuPage() {
   if (!staff || loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     )
   }
@@ -262,7 +262,7 @@ export function MenuPage() {
             className="rounded-xl"
           >
             <Upload data-icon="inline-start" />
-            {importing ? 'Yuklanmoqda...' : 'CSV import'}
+            {importing ? 'Loading...' : 'CSV import'}
           </Button>
           <Button onClick={openAdd} className="rounded-xl">
             <Plus data-icon="inline-start" />
