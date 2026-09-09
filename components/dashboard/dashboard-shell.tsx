@@ -8,7 +8,7 @@ import { MenuPage } from './pages/menu-page'
 import { TablesPage } from './pages/tables-page'
 import { StaffPage } from './pages/staff-page'
 import { OrdersPage } from './pages/orders-page'
-import { PlaceholderPage } from './pages/placeholder-page'
+import { SettingsPage } from './pages/settings-page'
 import { CallWaiterAlerts } from './call-waiter-alerts'
 
 const pageMeta: Record<Page, { title: string; subtitle: string }> = {
@@ -65,12 +65,7 @@ export function DashboardShell() {
           {page === 'tables' && <TablesPage />}
           {page === 'staff' && <StaffPage />}
           {page === 'orders' && <OrdersPage />}
-          {page === 'settings' && (
-            <PlaceholderPage
-              title="Settings are on the way"
-              description="Opening hours, tax rates, printers and POS integrations."
-            />
-          )}
+          {page === 'settings' && <SettingsPage />}
         </main>
       </div>
     </div>
