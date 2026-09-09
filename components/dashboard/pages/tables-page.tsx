@@ -162,7 +162,7 @@ export function TablesPage() {
   if (!staff || loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     )
   }
@@ -182,7 +182,7 @@ export function TablesPage() {
       {staff.role === 'admin' && (
         <div className="flex flex-col gap-3 rounded-2xl bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">Stollarni boshqarish</p>
+            <p className="text-sm font-semibold">Manage tables</p>
             <Button
               onClick={addTable}
               disabled={adding}
@@ -190,7 +190,7 @@ export function TablesPage() {
               className="rounded-xl"
             >
               <Plus data-icon="inline-start" />
-              {adding ? 'Qo\'shilmoqda...' : 'Stol qo\'shish'}
+              {adding ? 'Qo\'shilmoqda...' : 'Add table'}
             </Button>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -199,19 +199,19 @@ export function TablesPage() {
                 key={t.id}
                 className="flex items-center gap-2 rounded-xl bg-muted px-3 py-1.5 text-sm"
               >
-                <span className="font-medium">Stol {t.number}</span>
+                <span className="font-medium">Table {t.number}</span>
                 <button
                   onClick={() => copyLink(t.id)}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                  aria-label="Havolani nusxalash"
+                  aria-label="Copy link"
                 >
                   <Copy className="size-3.5" />
-                  {copiedId === t.id ? 'Nusxalandi!' : 'Havola'}
+                  {copiedId === t.id ? 'Copied!' : 'Link'}
                 </button>
                 <button
                   onClick={() => removeTable(t.id)}
                   className="text-muted-foreground hover:text-destructive"
-                  aria-label="O'chirish"
+                  aria-label="Remove"
                 >
                   <Trash2 className="size-3.5" />
                 </button>
