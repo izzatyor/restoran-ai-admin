@@ -32,7 +32,7 @@ export function LoginPage() {
       <div className="w-full max-w-sm rounded-2xl bg-card p-8 shadow-sm">
         <h1 className="mb-1 text-xl font-semibold">Restoran Admin</h1>
         <p className="mb-6 text-sm text-muted-foreground">
-          Tizimga kirish uchun email va parolingizni kiriting.
+          Enter your email and password to sign in.
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -53,7 +53,7 @@ export function LoginPage() {
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor="password" className="text-sm font-medium">
-              Parol
+              Password
             </label>
             <div className="relative">
               <input
@@ -69,7 +69,7 @@ export function LoginPage() {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label={showPassword ? 'Parolni yashirish' : 'Parolni ko\'rsatish'}
+                aria-label={showPassword ? 'Passwordni yashirish' : 'Passwordni ko\'rsatish'}
               >
                 {showPassword ? (
                   <EyeOff className="size-4" />
@@ -87,7 +87,7 @@ export function LoginPage() {
           )}
 
           <Button type="submit" disabled={loading} className="mt-2 rounded-xl">
-            {loading ? 'Kirilmoqda...' : 'Kirish'}
+            {loading ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
       </div>
