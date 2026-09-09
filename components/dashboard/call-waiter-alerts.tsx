@@ -18,6 +18,7 @@ export function CallWaiterAlerts() {
   const [calls, setCalls] = useState<CallRequest[]>([])
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const prevCountRef = useRef(0)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -79,6 +80,13 @@ export function CallWaiterAlerts() {
     }
   }, [staff, loadCalls])
 
+  useEffect(() => {
+    if (calls.length > prevCountRef.current) {
+      setOpen(true)
+    }
+    prevCountRef.current = calls.length
+  }, [calls])
+
   async function resolve(id: string) {
     await supabase
       .from('call_waiter_requests')
@@ -92,12 +100,15 @@ export function CallWaiterAlerts() {
     <div ref={containerRef} className="fixed bottom-4 right-4 z-40">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="relative flex size-12 items-center justify-center rounded-full bg-foreground text-background shadow-lg"
+        className={cn(
+          'relative flex size-14 items-center justify-center rounded-full bg-foreground text-background shadow-lg',
+          calls.length > 0 && 'animate-pulse ring-4 ring-destructive/40',
+        )}
         aria-label="Chaqiruvlar"
       >
-        <Bell className="size-5" />
+        <Bell className="size-6" />
         {calls.length > 0 && (
-          <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-destructive text-xs font-semibold text-destructive-foreground">
+          <span className="absolute -right-1 -top-1 flex size-6 items-center justify-center rounded-full bg-destructive text-sm font-semibold text-destructive-foreground">
             {calls.length}
           </span>
         )}
