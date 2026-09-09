@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Plus } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Plus, Upload } from 'lucide-react'
 import {
   type MenuCategory,
   type MenuItem,
@@ -15,7 +15,6 @@ import { supabase } from '@/lib/supabase-client'
 import { useStaff } from '@/lib/staff-context'
 
 type Filter = 'All' | MenuCategory
-
 type DbCategory = { id: string; name: string }
 
 export function MenuPage() {
@@ -26,6 +25,9 @@ export function MenuPage() {
   const [filter, setFilter] = useState<Filter>('All')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<MenuItem | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importMessage, setImportMessage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (staff) loadData()
@@ -76,22 +78,30 @@ export function MenuPage() {
     setDialogOpen(true)
   }
 
+  async function ensureCategoryId(name: string, current: DbCategory[]) {
+    const existing = current.find(
+      (c) => c.name.toLowerCase() === name.toLowerCase(),
+    )
+    if (existing) return { id: existing.id, list: current }
+
+    const { data: newCat } = await supabase
+      .from('menu_categories')
+      .insert({ restaurant_id: staff!.restaurantId, name })
+      .select('id, name')
+      .single()
+
+    if (!newCat) return { id: null, list: current }
+    return { id: newCat.id, list: [...current, newCat] }
+  }
+
   async function save(item: MenuItem) {
     if (!staff) return
 
-    let categoryId = categories.find((c) => c.name === item.category)?.id
-
-    if (!categoryId) {
-      const { data: newCat } = await supabase
-        .from('menu_categories')
-        .insert({ restaurant_id: staff.restaurantId, name: item.category })
-        .select('id, name')
-        .single()
-      if (newCat) {
-        categoryId = newCat.id
-        setCategories((prev) => [...prev, newCat])
-      }
-    }
+    const { id: categoryId, list } = await ensureCategoryId(
+      item.category,
+      categories,
+    )
+    setCategories(list)
 
     const isExisting = items.some((i) => i.id === item.id)
 
@@ -122,6 +132,73 @@ export function MenuPage() {
   async function remove(id: string) {
     await supabase.from('menu_items').delete().eq('id', id)
     setItems((prev) => prev.filter((i) => i.id !== id))
+  }
+
+  function parseCsv(text: string): string[][] {
+    return text
+      .split(/\r?\n/)
+      .filter((line) => line.trim().length > 0)
+      .map((line) => line.split(',').map((cell) => cell.trim()))
+  }
+
+  async function handleCsvUpload(file: File) {
+    if (!staff) return
+    setImporting(true)
+    setImportMessage(null)
+
+    const text = await file.text()
+    const rows = parseCsv(text)
+
+    const [header, ...dataRows] = rows
+    const nameIdx = header.findIndex((h) => h.toLowerCase() === 'name')
+    const categoryIdx = header.findIndex(
+      (h) => h.toLowerCase() === 'category',
+    )
+    const priceIdx = header.findIndex((h) => h.toLowerCase() === 'price')
+    const descIdx = header.findIndex(
+      (h) => h.toLowerCase() === 'description',
+    )
+
+    if (nameIdx === -1 || categoryIdx === -1 || priceIdx === -1) {
+      setImportMessage(
+        "Xato: CSV faylida 'name', 'category', 'price' ustunlari bo'lishi shart.",
+      )
+      setImporting(false)
+      return
+    }
+
+    let currentCategories = categories
+    let successCount = 0
+
+    for (const row of dataRows) {
+      const name = row[nameIdx]?.trim()
+      const categoryName = row[categoryIdx]?.trim()
+      const price = Number(row[priceIdx])
+      const description = descIdx !== -1 ? row[descIdx]?.trim() : ''
+
+      if (!name || !categoryName || Number.isNaN(price)) continue
+
+      const { id: categoryId, list } = await ensureCategoryId(
+        categoryName,
+        currentCategories,
+      )
+      currentCategories = list
+
+      await supabase.from('menu_items').insert({
+        restaurant_id: staff.restaurantId,
+        name,
+        category_id: categoryId,
+        price,
+        description: description || null,
+      })
+
+      successCount += 1
+    }
+
+    setCategories(currentCategories)
+    setImportMessage(`${successCount} ta taom muvaffaqiyatli qo'shildi.`)
+    setImporting(false)
+    await loadData()
   }
 
   const filters: Filter[] = ['All', ...menuCategories]
@@ -165,11 +242,39 @@ export function MenuPage() {
             </button>
           ))}
         </div>
-        <Button onClick={openAdd} className="rounded-xl">
-          <Plus data-icon="inline-start" />
-          Add item
-        </Button>
+        <div className="flex gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) handleCsvUpload(file)
+              e.target.value = ''
+            }}
+          />
+          <Button
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="rounded-xl"
+          >
+            <Upload data-icon="inline-start" />
+            {importing ? 'Yuklanmoqda...' : 'CSV import'}
+          </Button>
+          <Button onClick={openAdd} className="rounded-xl">
+            <Plus data-icon="inline-start" />
+            Add item
+          </Button>
+        </div>
       </div>
+
+      {importMessage && (
+        <p className="rounded-xl bg-muted px-4 py-2.5 text-sm">
+          {importMessage}
+        </p>
+      )}
 
       {visible.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16 text-center">
