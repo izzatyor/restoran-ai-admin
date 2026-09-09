@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Bell } from 'lucide-react'
 import { supabase } from '@/lib/supabase-client'
 import { useStaff } from '@/lib/staff-context'
@@ -17,6 +17,20 @@ export function CallWaiterAlerts() {
   const staff = useStaff()
   const [calls, setCalls] = useState<CallRequest[]>([])
   const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const loadCalls = useCallback(async () => {
     if (!staff) return
@@ -75,10 +89,10 @@ export function CallWaiterAlerts() {
   if (!staff) return null
 
   return (
-    <div className="fixed right-4 top-4 z-40">
+    <div ref={containerRef} className="fixed bottom-4 right-4 z-40">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="relative flex size-11 items-center justify-center rounded-full bg-card shadow-md"
+        className="relative flex size-12 items-center justify-center rounded-full bg-foreground text-background shadow-lg"
         aria-label="Chaqiruvlar"
       >
         <Bell className="size-5" />
@@ -90,7 +104,7 @@ export function CallWaiterAlerts() {
       </button>
 
       {open && (
-        <div className="mt-2 w-72 rounded-2xl bg-card p-3 shadow-lg">
+        <div className="absolute bottom-14 right-0 w-72 rounded-2xl bg-card p-3 shadow-lg">
           <p className="mb-2 px-1 text-sm font-semibold">Chaqiruvlar</p>
           {calls.length === 0 ? (
             <p className="px-1 py-4 text-center text-sm text-muted-foreground">
