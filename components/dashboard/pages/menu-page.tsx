@@ -113,6 +113,7 @@ export function MenuPage() {
           description: item.description,
           price: item.price,
           category_id: categoryId,
+          image_url: item.image,
         })
         .eq('id', item.id)
     } else {
