@@ -14,7 +14,7 @@ import { CallWaiterAlerts } from './call-waiter-alerts'
 
 const staticPageMeta: Record<Page, { title: string; subtitle: string }> = {
   dashboard: {
-    title: 'Xush kelibsiz',
+    title: 'Welcome',
     subtitle: 'Bugungi holat qanday?',
   },
   menu: {
@@ -50,8 +50,8 @@ export function DashboardShell() {
   const pageMeta =
     page === 'dashboard' && staff
       ? {
-          title: `Xush kelibsiz, ${staff.fullName.split(' ')[0]}`,
-          subtitle: `${staff.restaurantName} boshqaruv paneli`,
+          title: `Welcome, ${staff.fullName.split(' ')[0]}`,
+          subtitle: `${staff.restaurantName} dashboard`,
         }
       : staticPageMeta[page]
 
