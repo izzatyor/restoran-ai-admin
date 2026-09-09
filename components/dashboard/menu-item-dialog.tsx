@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Upload } from 'lucide-react'
 import {
   type MenuCategory,
   type MenuItem,
@@ -25,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { supabase } from '@/lib/supabase-client'
 
 type MenuItemDialogProps = {
   open: boolean
@@ -43,6 +45,9 @@ export function MenuItemDialog({
   const [price, setPrice] = useState('')
   const [category, setCategory] = useState<MenuCategory>('Mains')
   const [description, setDescription] = useState('')
+  const [image, setImage] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -50,10 +55,29 @@ export function MenuItemDialog({
     setPrice(item ? String(item.price) : '')
     setCategory(item?.category ?? 'Mains')
     setDescription(item?.description ?? '')
+    setImage(item?.image ?? '')
   }, [open, item])
 
   const isEditing = item !== null
   const canSave = name.trim().length > 0 && Number(price) > 0
+
+  async function handleFileSelect(file: File) {
+    setUploading(true)
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`
+
+    const { error } = await supabase.storage
+      .from('menu-images')
+      .upload(fileName, file)
+
+    if (!error) {
+      const { data } = supabase.storage
+        .from('menu-images')
+        .getPublicUrl(fileName)
+      setImage(data.publicUrl)
+    }
+    setUploading(false)
+  }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -64,7 +88,7 @@ export function MenuItemDialog({
       price: Number(price),
       category,
       description: description.trim(),
-      image: item?.image ?? '/menu/smash-burger.png',
+      image: image || '/menu/smash-burger.png',
     })
     onOpenChange(false)
   }
@@ -83,6 +107,41 @@ export function MenuItemDialog({
           </DialogHeader>
 
           <FieldGroup>
+            <Field>
+              <FieldLabel>Rasm</FieldLabel>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleFileSelect(file)
+                }}
+              />
+              <div className="flex items-center gap-3">
+                <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+                  {image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={image}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload data-icon="inline-start" />
+                  {uploading ? 'Yuklanmoqda...' : 'Rasm tanlash'}
+                </Button>
+              </div>
+            </Field>
             <Field>
               <FieldLabel htmlFor="item-name">Name</FieldLabel>
               <Input
@@ -148,7 +207,7 @@ export function MenuItemDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!canSave}>
+            <Button type="submit" disabled={!canSave || uploading}>
               {isEditing ? 'Save changes' : 'Add item'}
             </Button>
           </DialogFooter>
