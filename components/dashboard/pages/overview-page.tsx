@@ -38,12 +38,12 @@ const statusStyles: Record<string, string> = {
 }
 
 const statusLabel: Record<string, string> = {
-  yangi: 'Yangi',
-  qabul_qilindi: 'Qabul qilindi',
-  tayyorlanmoqda: 'Tayyorlanmoqda',
-  tayyor: 'Tayyor',
-  yetkazildi: 'Yetkazildi',
-  bekor_qilindi: 'Bekor qilindi',
+  yangi: 'New',
+  qabul_qilindi: 'Accepted',
+  tayyorlanmoqda: 'Preparing',
+  tayyor: 'Ready',
+  yetkazildi: 'Served',
+  bekor_qilindi: 'Cancelled',
 }
 
 export function OverviewPage() {
@@ -152,7 +152,7 @@ export function OverviewPage() {
   if (!staff || loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     )
   }
@@ -167,44 +167,44 @@ export function OverviewPage() {
         className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
       >
         <StatCard
-          label="Bugungi buyurtmalar"
+          label="Today's orders"
           value={ordersToday.toString()}
           icon={Receipt}
-          hint="bugun"
+          hint="today"
         />
         <StatCard
-          label="Daromad"
+          label="Revenue"
           value={`${currency.format(revenueToday)} so'm`}
           icon={DollarSign}
-          hint="bugun"
+          hint="today"
           emphasis
         />
         <StatCard
-          label="Faol stollar"
+          label="Active tables"
           value={`${activeTables} / ${totalTables}`}
           icon={Armchair}
-          hint={`${occupancy}% band`}
+          hint={`${occupancy}% occupied`}
         />
         <StatCard
-          label="Kutilayotgan buyurtmalar"
+          label="Pending orders"
           value={pendingOrders.toString()}
           icon={Clock}
-          hint="hozir"
+          hint="now"
         />
       </section>
 
       <div className="overflow-hidden rounded-2xl bg-card shadow-sm">
         <div className="border-b px-5 py-3">
-          <p className="text-sm font-semibold">So&apos;nggi buyurtmalar</p>
+          <p className="text-sm font-semibold">Recent orders</p>
         </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left text-muted-foreground">
-              <th className="px-5 py-3 font-medium">Buyurtma</th>
-              <th className="px-5 py-3 font-medium">Stol</th>
-              <th className="px-5 py-3 font-medium">Taomlar</th>
+              <th className="px-5 py-3 font-medium">Order</th>
+              <th className="px-5 py-3 font-medium">Table</th>
+              <th className="px-5 py-3 font-medium">Items</th>
               <th className="px-5 py-3 font-medium">Status</th>
-              <th className="px-5 py-3 text-right font-medium">Summa</th>
+              <th className="px-5 py-3 text-right font-medium">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -237,7 +237,7 @@ export function OverviewPage() {
 
         {recentOrders.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
-            <p className="font-semibold">Hali buyurtma yo&apos;q</p>
+            <p className="font-semibold">No orders yet</p>
           </div>
         )}
       </div>
