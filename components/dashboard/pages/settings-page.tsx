@@ -10,6 +10,7 @@ export function SettingsPage() {
   const [name, setName] = useState('')
   const [address, setAddress] = useState('')
   const [workHours, setWorkHours] = useState('')
+  const [logoUrl, setLogoUrl] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -22,7 +23,7 @@ export function SettingsPage() {
     if (!staff) return
     const { data } = await supabase
       .from('restaurants')
-      .select('name, address, work_hours')
+      .select('name, address, work_hours, logo_url')
       .eq('id', staff.restaurantId)
       .single()
 
@@ -30,6 +31,7 @@ export function SettingsPage() {
       setName(data.name ?? '')
       setAddress(data.address ?? '')
       setWorkHours(data.work_hours ?? '')
+      setLogoUrl(data.logo_url ?? '')
     }
     setLoading(false)
   }
@@ -41,7 +43,7 @@ export function SettingsPage() {
 
     await supabase
       .from('restaurants')
-      .update({ name, address, work_hours: workHours })
+      .update({ name, address, work_hours: workHours, logo_url: logoUrl })
       .eq('id', staff.restaurantId)
 
     setSaving(false)
@@ -88,6 +90,16 @@ export function SettingsPage() {
             onChange={(e) => setWorkHours(e.target.value)}
             className="rounded-xl border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             placeholder="09:00 - 23:00"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium">Logo (rasm havolasi)</label>
+          <input
+            value={logoUrl}
+            onChange={(e) => setLogoUrl(e.target.value)}
+            className="rounded-xl border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            placeholder="https://..."
           />
         </div>
 
