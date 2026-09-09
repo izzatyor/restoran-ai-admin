@@ -104,7 +104,7 @@ export function CallWaiterAlerts() {
           'relative flex size-14 items-center justify-center rounded-full bg-foreground text-background shadow-lg',
           calls.length > 0 && 'animate-pulse ring-4 ring-destructive/40',
         )}
-        aria-label="Chaqiruvlar"
+        aria-label="Alerts"
       >
         <Bell className="size-6" />
         {calls.length > 0 && (
@@ -116,7 +116,7 @@ export function CallWaiterAlerts() {
 
       {open && (
         <div className="absolute bottom-14 right-0 w-72 rounded-2xl bg-card p-3 shadow-lg">
-          <p className="mb-2 px-1 text-sm font-semibold">Chaqiruvlar</p>
+          <p className="mb-2 px-1 text-sm font-semibold">Alerts</p>
           {calls.length === 0 ? (
             <p className="px-1 py-4 text-center text-sm text-muted-foreground">
               Hozircha chaqiruv yo&apos;q
@@ -130,10 +130,10 @@ export function CallWaiterAlerts() {
                 >
                   <div>
                     <p className="text-sm font-medium">
-                      Stol {call.tableNumber}
+                      Table {call.tableNumber}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {call.reason ?? 'Yordam kerak'}
+                      {call.reason ?? 'Needs help'}
                     </p>
                   </div>
                   <button
@@ -142,7 +142,7 @@ export function CallWaiterAlerts() {
                       'shrink-0 rounded-full bg-foreground px-2.5 py-1 text-xs font-medium text-background',
                     )}
                   >
-                    Bajarildi
+                    Resolve
                   </button>
                 </div>
               ))}
