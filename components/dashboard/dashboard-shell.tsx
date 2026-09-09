@@ -1,15 +1,15 @@
 'use client'
-
 import { useState } from 'react'
 import type { Page } from '@/lib/restaurant-data'
 import { Sidebar } from './sidebar'
 import { TopBar } from './top-bar'
-import { StaffPage } from './pages/staff-page'
-import { OrdersPage } from './pages/orders-page'
 import { OverviewPage } from './pages/overview-page'
 import { MenuPage } from './pages/menu-page'
 import { TablesPage } from './pages/tables-page'
+import { StaffPage } from './pages/staff-page'
+import { OrdersPage } from './pages/orders-page'
 import { PlaceholderPage } from './pages/placeholder-page'
+import { CallWaiterAlerts } from './call-waiter-alerts'
 
 const pageMeta: Record<Page, { title: string; subtitle: string }> = {
   dashboard: {
@@ -37,32 +37,28 @@ const pageMeta: Record<Page, { title: string; subtitle: string }> = {
     subtitle: 'Restaurant profile, hours and integrations.',
   },
 }
-
 export function DashboardShell() {
   const [page, setPage] = useState<Page>('dashboard')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-
   function navigate(next: Page) {
     setPage(next)
     setMobileNavOpen(false)
   }
-
   return (
     <div className="flex min-h-svh bg-background">
+      <CallWaiterAlerts />
       <Sidebar
         active={page}
         onNavigate={navigate}
         mobileOpen={mobileNavOpen}
         onMobileClose={() => setMobileNavOpen(false)}
       />
-
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
           title={pageMeta[page].title}
           subtitle={pageMeta[page].subtitle}
           onOpenNav={() => setMobileNavOpen(true)}
         />
-
         <main className="flex-1 px-4 pb-10 pt-2 sm:px-6 lg:px-8">
           {page === 'dashboard' && <OverviewPage />}
           {page === 'menu' && <MenuPage />}
