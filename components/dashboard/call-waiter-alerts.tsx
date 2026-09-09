@@ -119,7 +119,7 @@ export function CallWaiterAlerts() {
           <p className="mb-2 px-1 text-sm font-semibold">Alerts</p>
           {calls.length === 0 ? (
             <p className="px-1 py-4 text-center text-sm text-muted-foreground">
-              Hozircha chaqiruv yo&apos;q
+              No alerts right now
             </p>
           ) : (
             <div className="flex flex-col gap-2">
