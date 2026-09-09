@@ -1,9 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { Copy, Plus, Trash2 } from 'lucide-react'
 import type { DiningTable, TableStatus } from '@/lib/restaurant-data'
 import { cn } from '@/lib/utils'
 import { TableCard, tableStatusMeta } from '../table-card'
+import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase-client'
 import { useStaff } from '@/lib/staff-context'
 
@@ -26,14 +28,17 @@ function formatSince(createdAt: string) {
 export function TablesPage() {
   const staff = useStaff()
   const [tables, setTables] = useState<DiningTable[]>([])
+  const [tokenById, setTokenById] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
+  const [adding, setAdding] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
     if (!staff) return
 
     const { data: dbTables } = await supabase
       .from('tables')
-      .select('id, table_number, seats')
+      .select('id, table_number, seats, qr_token')
       .eq('restaurant_id', staff.restaurantId)
       .order('table_number')
 
@@ -59,7 +64,7 @@ export function TablesPage() {
       const existing = orderByTable.get(o.table_id)
       if (
         !existing ||
-        new Date(o.created_at) > new Date(existing.created_at)
+        new Date(o.created_at) < new Date(existing.created_at)
       ) {
         orderByTable.set(o.table_id, o)
       }
@@ -85,8 +90,41 @@ export function TablesPage() {
     })
 
     setTables(mapped)
+    setTokenById(
+      Object.fromEntries((dbTables ?? []).map((t) => [t.id, t.qr_token])),
+    )
     setLoading(false)
   }, [staff])
+
+  async function addTable() {
+    if (!staff) return
+    setAdding(true)
+    const nextNumber = tables.length
+      ? Math.max(...tables.map((t) => t.number)) + 1
+      : 1
+
+    await supabase.from('tables').insert({
+      restaurant_id: staff.restaurantId,
+      table_number: nextNumber,
+    })
+
+    setAdding(false)
+    await loadData()
+  }
+
+  async function removeTable(id: string) {
+    await supabase.from('tables').delete().eq('id', id)
+    await loadData()
+  }
+
+  function copyLink(id: string) {
+    const token = tokenById[id]
+    if (!token) return
+    const url = `${window.location.origin}/t/${token}`
+    navigator.clipboard.writeText(url)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
 
   useEffect(() => {
     if (!staff) return
@@ -141,6 +179,48 @@ export function TablesPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {staff.role === 'admin' && (
+        <div className="flex flex-col gap-3 rounded-2xl bg-card p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">Stollarni boshqarish</p>
+            <Button
+              onClick={addTable}
+              disabled={adding}
+              size="sm"
+              className="rounded-xl"
+            >
+              <Plus data-icon="inline-start" />
+              {adding ? 'Qo\'shilmoqda...' : 'Stol qo\'shish'}
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {tables.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center gap-2 rounded-xl bg-muted px-3 py-1.5 text-sm"
+              >
+                <span className="font-medium">Stol {t.number}</span>
+                <button
+                  onClick={() => copyLink(t.id)}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                  aria-label="Havolani nusxalash"
+                >
+                  <Copy className="size-3.5" />
+                  {copiedId === t.id ? 'Nusxalandi!' : 'Havola'}
+                </button>
+                <button
+                  onClick={() => removeTable(t.id)}
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label="O'chirish"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <ul
         aria-label="Table status summary"
         className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm"
