@@ -54,18 +54,18 @@ export function SettingsPage() {
   if (!staff || loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     )
   }
 
   return (
     <div className="max-w-lg rounded-2xl bg-card p-6 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold">Restoran profili</h2>
+      <h2 className="mb-4 text-lg font-semibold">Restaurant profile</h2>
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Restoran nomi</label>
+          <label className="text-sm font-medium">Restaurant name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -74,17 +74,17 @@ export function SettingsPage() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Manzil</label>
+          <label className="text-sm font-medium">Address</label>
           <input
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className="rounded-xl border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            placeholder="Toshkent, Chilonzor tumani..."
+            placeholder="123 Main Street..."
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Ish vaqti</label>
+          <label className="text-sm font-medium">Working hours</label>
           <input
             value={workHours}
             onChange={(e) => setWorkHours(e.target.value)}
@@ -94,7 +94,7 @@ export function SettingsPage() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Logo (rasm havolasi)</label>
+          <label className="text-sm font-medium">Logo (image URL)</label>
           <input
             value={logoUrl}
             onChange={(e) => setLogoUrl(e.target.value)}
@@ -105,11 +105,11 @@ export function SettingsPage() {
 
         <div className="mt-2 flex items-center gap-3">
           <Button onClick={handleSave} disabled={saving} className="rounded-xl">
-            {saving ? 'Saqlanmoqda...' : 'Saqlash'}
+            {saving ? 'Saving...' : 'Save'}
           </Button>
           {saved && (
             <span className="text-sm text-emerald-600 dark:text-emerald-400">
-              Saqlandi!
+              Saved!
             </span>
           )}
         </div>
