@@ -34,21 +34,21 @@ const statusStyles: Record<DbOrderStatus, string> = {
 }
 
 const statusLabel: Record<DbOrderStatus, string> = {
-  yangi: 'Yangi',
-  qabul_qilindi: 'Qabul qilindi',
-  tayyorlanmoqda: 'Tayyorlanmoqda',
-  tayyor: 'Tayyor',
-  yetkazildi: 'Yetkazildi',
-  bekor_qilindi: 'Bekor qilindi',
+  yangi: 'New',
+  qabul_qilindi: 'Accepted',
+  tayyorlanmoqda: 'Preparing',
+  tayyor: 'Ready',
+  yetkazildi: 'Served',
+  bekor_qilindi: 'Cancelled',
 }
 
 function formatPlacedAt(createdAt: string) {
   const diffMs = Date.now() - new Date(createdAt).getTime()
   const mins = Math.max(0, Math.floor(diffMs / 60000))
-  if (mins < 1) return 'hozirgina'
-  if (mins < 60) return `${mins} daqiqa oldin`
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins} minutes ago`
   const hours = Math.floor(mins / 60)
-  return `${hours} soat oldin`
+  return `${hours} hours ago`
 }
 
 export function OrdersPage() {
@@ -126,7 +126,7 @@ export function OrdersPage() {
   if (!staff || loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     )
   }
