@@ -278,13 +278,13 @@ export default function TablePage() {
         </p>
       </header>
 
-      <div className="flex gap-1.5 overflow-x-auto px-4 py-3">
+      <div className="flex gap-2 overflow-x-auto px-4 py-4">
         <button
           onClick={() => setActiveCategory('all')}
           className={cn(
-            'shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium',
+            'shrink-0 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-colors',
             activeCategory === 'all'
-              ? 'bg-foreground text-background'
+              ? 'bg-foreground text-background shadow-md'
               : 'bg-card text-muted-foreground shadow-sm',
           )}
         >
@@ -295,9 +295,9 @@ export default function TablePage() {
             key={c.id}
             onClick={() => setActiveCategory(c.id)}
             className={cn(
-              'shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium',
+              'shrink-0 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-colors',
               activeCategory === c.id
-                ? 'bg-foreground text-background'
+                ? 'bg-foreground text-background shadow-md'
                 : 'bg-card text-muted-foreground shadow-sm',
             )}
           >
@@ -306,43 +306,51 @@ export default function TablePage() {
         ))}
       </div>
 
-      <div className="flex flex-col gap-3 px-4">
+      <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 lg:grid-cols-4">
         {visibleItems.map((item) => (
           <div
             key={item.id}
-            className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-sm"
+            className="flex flex-col overflow-hidden rounded-2xl bg-card shadow-sm"
           >
-            <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-muted">
-              {item.imageUrl && (
+            <div className="relative aspect-square w-full overflow-hidden bg-muted">
+              {item.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={item.imageUrl}
                   alt={item.name}
                   className="size-full object-cover"
                 />
+              ) : (
+                <div className="flex size-full items-center justify-center text-muted-foreground">
+                  <ShoppingCart className="size-8 opacity-30" />
+                </div>
               )}
+              <div className="absolute bottom-2 right-2">
+                <QuantityStepper
+                  qty={cart[item.id] ?? 0}
+                  onAdd={() => addToCart(item.id)}
+                  onRemove={() => removeFromCart(item.id)}
+                />
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold">{item.name}</p>
+            <div className="flex flex-1 flex-col gap-1 p-3">
+              <p className="line-clamp-2 text-sm font-semibold leading-snug">
+                {item.name}
+              </p>
               {item.description && (
-                <p className="truncate text-xs text-muted-foreground">
+                <p className="line-clamp-1 text-xs text-muted-foreground">
                   {item.description}
                 </p>
               )}
-              <p className="mt-1 text-sm font-medium">
+              <p className="mt-auto pt-1 text-sm font-bold">
                 {item.price.toLocaleString()} so&apos;m
               </p>
             </div>
-            <QuantityStepper
-              qty={cart[item.id] ?? 0}
-              onAdd={() => addToCart(item.id)}
-              onRemove={() => removeFromCart(item.id)}
-            />
           </div>
         ))}
 
         {visibleItems.length === 0 && (
-          <p className="py-10 text-center text-sm text-muted-foreground">
+          <p className="col-span-full py-10 text-center text-sm text-muted-foreground">
             No items in this category
           </p>
         )}
