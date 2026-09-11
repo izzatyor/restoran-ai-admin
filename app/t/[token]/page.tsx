@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { Plus, Minus, Bell, ShoppingCart, X } from 'lucide-react'
+import { Plus, Minus, Bell, ShoppingCart, X, Receipt } from 'lucide-react'
 import { supabase } from '@/lib/supabase-client'
 import { cn } from '@/lib/utils'
 
@@ -18,12 +18,27 @@ type MenuItem = {
   categoryId: string | null
 }
 type CartLine = { item: MenuItem; qty: number }
+type TableOrder = {
+  id: string
+  status: string
+  totalAmount: number
+  createdAt: string
+}
 
 type ViewState =
   | { kind: 'loading' }
   | { kind: 'not-found' }
   | { kind: 'menu' }
   | { kind: 'order-placed'; orderId: string }
+
+const statusLabel: Record<string, string> = {
+  yangi: "Received",
+  qabul_qilindi: 'Seen by kitchen',
+  tayyorlanmoqda: 'Preparing',
+  tayyor: 'Ready',
+  yetkazildi: 'Served',
+  bekor_qilindi: 'Cancelled',
+}
 
 export default function TablePage() {
   const params = useParams<{ token: string }>()
@@ -37,8 +52,12 @@ export default function TablePage() {
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [cart, setCart] = useState<Record<string, number>>({})
   const [cartOpen, setCartOpen] = useState(false)
+  const [billOpen, setBillOpen] = useState(false)
   const [placing, setPlacing] = useState(false)
+  const [orderError, setOrderError] = useState<string | null>(null)
   const [waiterCalled, setWaiterCalled] = useState(false)
+  const [callPending, setCallPending] = useState(false)
+  const [tableOrders, setTableOrders] = useState<TableOrder[]>([])
 
   useEffect(() => {
     loadTable()
@@ -70,7 +89,7 @@ export default function TablePage() {
       .eq('id', tableRow.restaurant_id)
       .maybeSingle()
 
-    setRestaurant({ name: restaurantRow?.name ?? 'Restoran' })
+    setRestaurant({ name: restaurantRow?.name ?? 'Restaurant' })
 
     const { data: catRows } = await supabase
       .from('menu_categories')
@@ -99,6 +118,33 @@ export default function TablePage() {
     setView({ kind: 'menu' })
   }
 
+  const refreshBillState = useCallback(async () => {
+    if (!table) return
+    const { data: ordersData } = await supabase.rpc('get_table_orders', {
+      p_table_id: table.id,
+    })
+    setTableOrders(
+      (ordersData ?? []).map((o) => ({
+        id: o.id,
+        status: o.status,
+        totalAmount: Number(o.total_amount),
+        createdAt: o.created_at,
+      })),
+    )
+
+    const { data: pending } = await supabase.rpc('has_pending_call', {
+      p_table_id: table.id,
+    })
+    setCallPending(Boolean(pending))
+  }, [table])
+
+  useEffect(() => {
+    if (!table) return
+    refreshBillState()
+    const interval = setInterval(refreshBillState, 6000)
+    return () => clearInterval(interval)
+  }, [table, refreshBillState])
+
   const cartLines: CartLine[] = useMemo(() => {
     return Object.entries(cart)
       .filter(([, qty]) => qty > 0)
@@ -114,6 +160,9 @@ export default function TablePage() {
     0,
   )
   const cartCount = cartLines.reduce((sum, line) => sum + line.qty, 0)
+  const billTotal = tableOrders
+    .filter((o) => o.status !== 'bekor_qilindi')
+    .reduce((sum, o) => sum + o.totalAmount, 0)
 
   function addToCart(itemId: string) {
     setCart((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? 0) + 1 }))
@@ -131,6 +180,7 @@ export default function TablePage() {
   async function placeOrder() {
     if (!table || cartLines.length === 0) return
     setPlacing(true)
+    setOrderError(null)
 
     const { data: orderRow, error } = await supabase
       .from('orders')
@@ -143,6 +193,7 @@ export default function TablePage() {
       .single()
 
     if (error || !orderRow) {
+      setOrderError("Couldn't place your order. Please try again.")
       setPlacing(false)
       return
     }
@@ -154,23 +205,35 @@ export default function TablePage() {
       price_at_order: line.item.price,
     }))
 
-    await supabase.from('order_items').insert(orderItemsPayload)
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItemsPayload)
+
+    if (itemsError) {
+      setOrderError("Couldn't place your order. Please try again.")
+      setPlacing(false)
+      return
+    }
 
     setCart({})
     setCartOpen(false)
     setPlacing(false)
     setView({ kind: 'order-placed', orderId: orderRow.id })
+    refreshBillState()
   }
 
-  async function callWaiter() {
-    if (!table) return
-    await supabase.from('call_waiter_requests').insert({
+  async function callWaiter(reason: string) {
+    if (!table || callPending) return
+    const { error } = await supabase.from('call_waiter_requests').insert({
       restaurant_id: table.restaurantId,
       table_id: table.id,
-      reason: 'Yordam kerak',
+      reason,
     })
-    setWaiterCalled(true)
-    setTimeout(() => setWaiterCalled(false), 4000)
+    if (!error) {
+      setWaiterCalled(true)
+      setCallPending(true)
+      setTimeout(() => setWaiterCalled(false), 4000)
+    }
   }
 
   const visibleItems =
@@ -181,7 +244,7 @@ export default function TablePage() {
   if (view.kind === 'loading') {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     )
   }
@@ -189,9 +252,9 @@ export default function TablePage() {
   if (view.kind === 'not-found') {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-2 bg-background px-6 text-center">
-        <p className="text-lg font-semibold">Stol topilmadi</p>
+        <p className="text-lg font-semibold">Table not found</p>
         <p className="text-sm text-muted-foreground">
-          Iltimos, ofitsiantdan yordam so&apos;rang.
+          Please ask a staff member for help.
         </p>
       </div>
     )
@@ -211,7 +274,7 @@ export default function TablePage() {
       <header className="sticky top-0 z-10 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <p className="text-lg font-semibold">{restaurant?.name}</p>
         <p className="text-sm text-muted-foreground">
-          Stol {table?.tableNumber}
+          Table {table?.tableNumber}
         </p>
       </header>
 
@@ -225,7 +288,7 @@ export default function TablePage() {
               : 'bg-card text-muted-foreground shadow-sm',
           )}
         >
-          Hammasi
+          All
         </button>
         {categories.map((c) => (
           <button
@@ -280,22 +343,34 @@ export default function TablePage() {
 
         {visibleItems.length === 0 && (
           <p className="py-10 text-center text-sm text-muted-foreground">
-            Bu kategoriyada taom yo&apos;q
+            No items in this category
           </p>
         )}
       </div>
 
+      {/* Bill button - only shown once at least one order exists */}
+      {tableOrders.length > 0 && (
+        <button
+          onClick={() => setBillOpen(true)}
+          className="fixed bottom-40 right-4 z-20 flex size-12 items-center justify-center rounded-full bg-card shadow-lg"
+          aria-label="View bill"
+        >
+          <Receipt className="size-5" />
+        </button>
+      )}
+
       <button
-        onClick={callWaiter}
-        className="fixed bottom-24 right-4 z-20 flex size-12 items-center justify-center rounded-full bg-card shadow-lg"
-        aria-label="Ofitsiant chaqirish"
+        onClick={() => callWaiter('Needs help')}
+        disabled={callPending}
+        className="fixed bottom-24 right-4 z-20 flex size-12 items-center justify-center rounded-full bg-card shadow-lg disabled:opacity-50"
+        aria-label="Call waiter"
       >
         <Bell className="size-5" />
       </button>
 
       {waiterCalled && (
-        <div className="fixed bottom-40 right-4 z-20 rounded-xl bg-foreground px-3 py-2 text-xs font-medium text-background shadow-lg">
-          Ofitsiant chaqirildi
+        <div className="fixed bottom-56 right-4 z-20 rounded-xl bg-foreground px-3 py-2 text-xs font-medium text-background shadow-lg">
+          Waiter has been called
         </div>
       )}
 
@@ -306,7 +381,7 @@ export default function TablePage() {
         >
           <span className="flex items-center gap-2 font-medium">
             <ShoppingCart className="size-4" />
-            {cartCount} ta mahsulot
+            {cartCount} items
           </span>
           <span className="font-semibold">
             {cartTotal.toLocaleString()} so&apos;m
@@ -319,10 +394,21 @@ export default function TablePage() {
           lines={cartLines}
           total={cartTotal}
           placing={placing}
+          error={orderError}
           onClose={() => setCartOpen(false)}
           onAdd={addToCart}
           onRemove={removeFromCart}
           onPlaceOrder={placeOrder}
+        />
+      )}
+
+      {billOpen && (
+        <BillSheet
+          orders={tableOrders}
+          total={billTotal}
+          callPending={callPending}
+          onClose={() => setBillOpen(false)}
+          onRequestBill={() => callWaiter('Bill requested')}
         />
       )}
     </div>
@@ -343,7 +429,7 @@ function QuantityStepper({
       <button
         onClick={onAdd}
         className="flex size-9 shrink-0 items-center justify-center rounded-full bg-foreground text-background"
-        aria-label="Qo'shish"
+        aria-label="Add"
       >
         <Plus className="size-4" />
       </button>
@@ -354,7 +440,7 @@ function QuantityStepper({
       <button
         onClick={onRemove}
         className="flex size-7 items-center justify-center rounded-full bg-background"
-        aria-label="Ayirish"
+        aria-label="Remove"
       >
         <Minus className="size-3.5" />
       </button>
@@ -364,7 +450,7 @@ function QuantityStepper({
       <button
         onClick={onAdd}
         className="flex size-7 items-center justify-center rounded-full bg-background"
-        aria-label="Qo'shish"
+        aria-label="Add"
       >
         <Plus className="size-3.5" />
       </button>
@@ -376,6 +462,7 @@ function CartSheet({
   lines,
   total,
   placing,
+  error,
   onClose,
   onAdd,
   onRemove,
@@ -384,6 +471,7 @@ function CartSheet({
   lines: CartLine[]
   total: number
   placing: boolean
+  error: string | null
   onClose: () => void
   onAdd: (id: string) => void
   onRemove: (id: string) => void
@@ -393,8 +481,8 @@ function CartSheet({
     <div className="fixed inset-0 z-30 flex flex-col justify-end bg-black/50">
       <div className="flex max-h-[80vh] flex-col rounded-t-3xl bg-background p-4">
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-lg font-semibold">Buyurtma</p>
-          <button onClick={onClose} aria-label="Yopish">
+          <p className="text-lg font-semibold">Your order</p>
+          <button onClick={onClose} aria-label="Close">
             <X className="size-5" />
           </button>
         </div>
@@ -421,16 +509,83 @@ function CartSheet({
         </div>
 
         <div className="mt-3 flex items-center justify-between border-t pt-3 text-lg font-semibold">
-          <span>Jami</span>
+          <span>Total</span>
           <span>{total.toLocaleString()} so&apos;m</span>
         </div>
+
+        {error && (
+          <p className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
+        )}
 
         <button
           onClick={onPlaceOrder}
           disabled={placing}
           className="mt-4 rounded-2xl bg-foreground py-3.5 text-center font-semibold text-background disabled:opacity-60"
         >
-          {placing ? 'Yuborilmoqda...' : 'Buyurtma berish'}
+          {placing ? 'Placing order...' : 'Place order'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function BillSheet({
+  orders,
+  total,
+  callPending,
+  onClose,
+  onRequestBill,
+}: {
+  orders: TableOrder[]
+  total: number
+  callPending: boolean
+  onClose: () => void
+  onRequestBill: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-30 flex flex-col justify-end bg-black/50">
+      <div className="flex max-h-[80vh] flex-col rounded-t-3xl bg-background p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-lg font-semibold">Your bill</p>
+          <button onClick={onClose} aria-label="Close">
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {orders.map((order) => (
+            <div
+              key={order.id}
+              className="flex items-center justify-between gap-3 border-b py-3 last:border-0"
+            >
+              <div>
+                <p className="text-sm font-medium">
+                  Order #{order.id.slice(0, 8)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {statusLabel[order.status] ?? order.status}
+                </p>
+              </div>
+              <p className="text-sm font-medium">
+                {order.totalAmount.toLocaleString()} so&apos;m
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-3 flex items-center justify-between border-t pt-3 text-lg font-semibold">
+          <span>Total</span>
+          <span>{total.toLocaleString()} so&apos;m</span>
+        </div>
+
+        <button
+          onClick={onRequestBill}
+          disabled={callPending}
+          className="mt-4 rounded-2xl bg-foreground py-3.5 text-center font-semibold text-background disabled:opacity-60"
+        >
+          {callPending ? 'Request sent...' : 'Request bill'}
         </button>
       </div>
     </div>
@@ -466,28 +621,28 @@ function OrderStatusScreen({
     }
   }, [orderId])
 
-  const statusLabel: Record<string, string> = {
-    yangi: 'Buyurtmangiz qabul qilindi',
-    qabul_qilindi: "Oshxona buyurtmangizni ko'rdi",
-    tayyorlanmoqda: 'Taomingiz tayyorlanmoqda',
-    tayyor: 'Taomingiz tayyor!',
-    yetkazildi: 'Yoqimli ishtaha!',
-    bekor_qilindi: 'Buyurtma bekor qilindi',
+  const bigLabel: Record<string, string> = {
+    yangi: 'Order received',
+    qabul_qilindi: 'Kitchen has seen your order',
+    tayyorlanmoqda: 'Your food is being prepared',
+    tayyor: 'Your food is ready!',
+    yetkazildi: 'Enjoy your meal!',
+    bekor_qilindi: 'Order was cancelled',
   }
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
       <p className="text-2xl font-semibold">
-        {statusLabel[status] ?? 'Buyurtma qabul qilindi'}
+        {bigLabel[status] ?? 'Order received'}
       </p>
       <p className="text-sm text-muted-foreground">
-        Buyurtma raqami: {orderId.slice(0, 8)}
+        Order #{orderId.slice(0, 8)}
       </p>
       <button
         onClick={onNewOrder}
         className="mt-4 rounded-full bg-card px-5 py-2.5 text-sm font-medium shadow-sm"
       >
-        Yana buyurtma berish
+        Order more
       </button>
     </div>
   )
