@@ -270,21 +270,21 @@ export default function TablePage() {
   }
 
   return (
-    <div className="min-h-svh bg-background pb-24">
-      <header className="sticky top-0 z-10 border-b bg-background/95 px-4 py-3 backdrop-blur">
-        <p className="text-lg font-semibold">{restaurant?.name}</p>
+    <div className="mx-auto min-h-svh max-w-3xl bg-background pb-28 shadow-2xl">
+      <header className="sticky top-0 z-10 border-b bg-background/95 px-5 py-4 backdrop-blur">
+        <p className="text-xl font-bold">{restaurant?.name}</p>
         <p className="text-sm text-muted-foreground">
           Table {table?.tableNumber}
         </p>
       </header>
 
-      <div className="flex gap-2 overflow-x-auto px-4 py-4">
+      <div className="flex gap-2 overflow-x-auto px-5 py-4">
         <button
           onClick={() => setActiveCategory('all')}
           className={cn(
-            'shrink-0 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-colors',
+            'shrink-0 rounded-full px-5 py-2.5 text-sm font-bold transition-all',
             activeCategory === 'all'
-              ? 'bg-foreground text-background shadow-md'
+              ? 'bg-primary text-primary-foreground shadow-md'
               : 'bg-card text-muted-foreground shadow-sm',
           )}
         >
@@ -295,9 +295,9 @@ export default function TablePage() {
             key={c.id}
             onClick={() => setActiveCategory(c.id)}
             className={cn(
-              'shrink-0 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-colors',
+              'shrink-0 rounded-full px-5 py-2.5 text-sm font-bold transition-all',
               activeCategory === c.id
-                ? 'bg-foreground text-background shadow-md'
+                ? 'bg-primary text-primary-foreground shadow-md'
                 : 'bg-card text-muted-foreground shadow-sm',
             )}
           >
@@ -306,13 +306,13 @@ export default function TablePage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 px-5 sm:grid-cols-3">
         {visibleItems.map((item) => (
           <div
             key={item.id}
-            className="flex flex-col overflow-hidden rounded-2xl bg-card shadow-sm"
+            className="flex flex-col overflow-hidden rounded-3xl bg-card shadow-md"
           >
-            <div className="relative aspect-square w-full overflow-hidden bg-muted">
+            <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
               {item.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -325,26 +325,21 @@ export default function TablePage() {
                   <ShoppingCart className="size-8 opacity-30" />
                 </div>
               )}
-              <div className="absolute bottom-2 right-2">
+            </div>
+            <div className="flex flex-1 flex-col gap-2 p-3.5">
+              <p className="line-clamp-2 text-sm font-bold leading-snug">
+                {item.name}
+              </p>
+              <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                  {item.price.toLocaleString()} so&apos;m
+                </span>
                 <QuantityStepper
                   qty={cart[item.id] ?? 0}
                   onAdd={() => addToCart(item.id)}
                   onRemove={() => removeFromCart(item.id)}
                 />
               </div>
-            </div>
-            <div className="flex flex-1 flex-col gap-1 p-3">
-              <p className="line-clamp-2 text-sm font-semibold leading-snug">
-                {item.name}
-              </p>
-              {item.description && (
-                <p className="line-clamp-1 text-xs text-muted-foreground">
-                  {item.description}
-                </p>
-              )}
-              <p className="mt-auto pt-1 text-sm font-bold">
-                {item.price.toLocaleString()} so&apos;m
-              </p>
             </div>
           </div>
         ))}
@@ -356,46 +351,51 @@ export default function TablePage() {
         )}
       </div>
 
-      {/* Bill button - only shown once at least one order exists */}
-      {tableOrders.length > 0 && (
-        <button
-          onClick={() => setBillOpen(true)}
-          className="fixed bottom-40 right-4 z-20 flex size-12 items-center justify-center rounded-full bg-card shadow-lg"
-          aria-label="View bill"
-        >
-          <Receipt className="size-5" />
-        </button>
-      )}
+      {/* Floating action area - aligned to the same centered column as content */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 mx-auto max-w-3xl px-5 pb-5">
+        <div className="pointer-events-auto flex flex-col items-end gap-3">
+          {waiterCalled && (
+            <div className="rounded-xl bg-foreground px-3 py-2 text-xs font-medium text-background shadow-lg">
+              Waiter has been called
+            </div>
+          )}
 
-      <button
-        onClick={() => callWaiter('Needs help')}
-        disabled={callPending}
-        className="fixed bottom-24 right-4 z-20 flex size-12 items-center justify-center rounded-full bg-card shadow-lg disabled:opacity-50"
-        aria-label="Call waiter"
-      >
-        <Bell className="size-5" />
-      </button>
+          <div className="flex gap-3">
+            {tableOrders.length > 0 && (
+              <button
+                onClick={() => setBillOpen(true)}
+                className="flex size-12 items-center justify-center rounded-full bg-card shadow-lg"
+                aria-label="View bill"
+              >
+                <Receipt className="size-5" />
+              </button>
+            )}
+            <button
+              onClick={() => callWaiter('Needs help')}
+              disabled={callPending}
+              className="flex size-12 items-center justify-center rounded-full bg-card shadow-lg disabled:opacity-50"
+              aria-label="Call waiter"
+            >
+              <Bell className="size-5" />
+            </button>
+          </div>
 
-      {waiterCalled && (
-        <div className="fixed bottom-56 right-4 z-20 rounded-xl bg-foreground px-3 py-2 text-xs font-medium text-background shadow-lg">
-          Waiter has been called
+          {cartCount > 0 && (
+            <button
+              onClick={() => setCartOpen(true)}
+              className="flex w-full items-center justify-between rounded-2xl bg-foreground px-5 py-4 text-background shadow-lg"
+            >
+              <span className="flex items-center gap-2 font-medium">
+                <ShoppingCart className="size-4" />
+                {cartCount} items
+              </span>
+              <span className="font-semibold">
+                {cartTotal.toLocaleString()} so&apos;m
+              </span>
+            </button>
+          )}
         </div>
-      )}
-
-      {cartCount > 0 && (
-        <button
-          onClick={() => setCartOpen(true)}
-          className="fixed inset-x-4 bottom-4 z-20 flex items-center justify-between rounded-2xl bg-foreground px-5 py-4 text-background shadow-lg"
-        >
-          <span className="flex items-center gap-2 font-medium">
-            <ShoppingCart className="size-4" />
-            {cartCount} items
-          </span>
-          <span className="font-semibold">
-            {cartTotal.toLocaleString()} so&apos;m
-          </span>
-        </button>
-      )}
+      </div>
 
       {cartOpen && (
         <CartSheet
@@ -487,7 +487,7 @@ function CartSheet({
 }) {
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end bg-black/50">
-      <div className="flex max-h-[80vh] flex-col rounded-t-3xl bg-background p-4">
+      <div className="mx-auto flex max-h-[80vh] w-full max-w-3xl flex-col rounded-t-3xl bg-background p-5">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-lg font-semibold">Your order</p>
           <button onClick={onClose} aria-label="Close">
@@ -554,7 +554,7 @@ function BillSheet({
 }) {
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end bg-black/50">
-      <div className="flex max-h-[80vh] flex-col rounded-t-3xl bg-background p-4">
+      <div className="mx-auto flex max-h-[80vh] w-full max-w-3xl flex-col rounded-t-3xl bg-background p-5">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-lg font-semibold">Your bill</p>
           <button onClick={onClose} aria-label="Close">
