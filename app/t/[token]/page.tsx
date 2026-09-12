@@ -499,13 +499,27 @@ function CartSheet({
           {lines.map((line) => (
             <div
               key={line.item.id}
-              className="flex items-center justify-between gap-3 border-b py-3 last:border-0"
+              className="flex items-center gap-3 border-b py-3 last:border-0"
             >
+              <div className="size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
+                {line.item.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={line.item.imageUrl}
+                    alt={line.item.name}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <div className="flex size-full items-center justify-center text-muted-foreground">
+                    <ShoppingCart className="size-4 opacity-30" />
+                  </div>
+                )}
+              </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{line.item.name}</p>
-                <p className="text-sm text-muted-foreground">
+                <span className="mt-1 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                   {line.item.price.toLocaleString()} so&apos;m
-                </p>
+                </span>
               </div>
               <QuantityStepper
                 qty={line.qty}
